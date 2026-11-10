@@ -1,0 +1,23 @@
+# Logs
+logs
+*.log
+
+# Build output
+*.exe
+release
+build/bin
+
+# Wails 產生的前端綁定（每次 build 重新生成）
+frontend/wailsjs/
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+!.vscode/launch.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?

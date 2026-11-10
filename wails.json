@@ -1,0 +1,14 @@
+{
+  "$schema": "https://wails.io/schemas/config.v2.json",
+  "name": "fold-chair-ptt",
+  "outputfilename": "fold-chair-ptt",
+  "info": {
+    "productName": "Fold Chair PTT",
+    "productVersion": "1.1.1",
+    "copyright": "Copyright © 2026",
+    "comments": "PTT 推文即時置頂浮動窗"
+  },
+  "author": {
+    "name": ""
+  }
+}

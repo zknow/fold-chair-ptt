@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Fold Chair PTT</title>
+    <link rel="stylesheet" href="style.css" />
+</head>
+<body class="theme-light">
+    <div id="app">
+        <header id="titlebar">
+            <div class="title-wrap">
+                <div id="board" class="board"></div>
+                <div id="articleTitle" class="article-title">Fold Chair PTT</div>
+            </div>
+            <div class="tools">
+                <button id="pinBtn" class="icon-btn" title="置頂"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path class="pin-body" d="M8 3h8v2l-2 3v5l2 3H8l2-3V8L8 5z"/><path d="M12 16v5"/></svg></button>
+                <button id="settingBtn" class="icon-btn" title="設定">⚙</button>
+                <button id="closeBtn" class="icon-btn" title="關閉">✕</button>
+            </div>
+        </header>
+
+        <section id="loader" class="loader">
+            <div class="loader-card">
+                <h1>Fold Chair PTT</h1>
+                <p class="hint">貼上 PTT 文章網址，開始即時追蹤推文。</p>
+                <input id="urlInput" type="text" spellcheck="false" autocomplete="off"
+                    placeholder="https://www.ptt.cc/bbs/Stock/M.xxxx.A.xxx.html" />
+                <button id="loadBtn" class="primary-btn">開始監控</button>
+                <p id="error" class="error"></p>
+            </div>
+        </section>
+
+        <section id="main" class="main" hidden>
+            <ul id="messages" class="messages"></ul>
+            <button id="toBottom" class="to-bottom" hidden>
+                回到底部 <span id="bufferCount"></span>
+            </button>
+        </section>
+
+        <section id="settings" class="settings" hidden>
+            <div class="settings-card">
+                <h2>設定</h2>
+                <label>
+                    <span>主題</span>
+                    <select id="themeSelect">
+                        <option value="light">淺色</option>
+                        <option value="dark">深色</option>
+                    </select>
+                </label>
+                <label>
+                    <span>字級</span>
+                    <input id="fontSize" type="number" min="10" max="24" step="1" />
+                </label>
+                <label>
+                    <span>輪詢間隔 (ms)</span>
+                    <input id="pollInterval" type="number" min="1000" max="30000" step="500" />
+                </label>
+                <label>
+                    <span>保留訊息數</span>
+                    <input id="maxMessages" type="number" min="50" max="3000" step="50" />
+                </label>
+                <div class="settings-actions">
+                    <button id="cancelSettingsBtn" class="ghost-btn">取消</button>
+                    <button id="saveSettingsBtn" class="primary-btn">儲存</button>
+                </div>
+            </div>
+        </section>
+
+        <footer id="statusbar">
+            <span id="statusDot" class="dot"></span>
+            <span id="statusText">待機</span>
+            <button id="changeBtn" class="link-btn" hidden>更換文章</button>
+        </footer>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>
