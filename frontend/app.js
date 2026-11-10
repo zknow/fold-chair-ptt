@@ -12,7 +12,10 @@
         messages: [],
         buffer: [],
         lastSeq: -1,
-        loaded: false
+        loaded: false,
+        board: null,
+        boardPage: null,
+        source: 'url'
     };
 
     function el(id) {
@@ -212,6 +215,60 @@
     // load article
     // =================
 
+    var BOARD_NAMES = { Stock: '股票板', Gossiping: '八卦板' };
+
+    function errorText(e) {
+        return e && e.message ? e.message : String(e);
+    }
+
+    function showLoader() {
+        el('loader').hidden = false;
+        el('boardView').hidden = true;
+        el('main').hidden = true;
+        el('changeBtn').hidden = true;
+        el('board').textContent = '';
+        el('articleTitle').textContent = 'Fold Chair PTT';
+    }
+
+    function showBoardView() {
+        el('loader').hidden = true;
+        el('boardView').hidden = false;
+        el('main').hidden = true;
+        el('changeBtn').hidden = true;
+        el('board').textContent = BOARD_NAMES[state.board] || '';
+        el('articleTitle').textContent = '文章列表';
+    }
+
+    async function openArticle(url, source) {
+        var data = await api().LoadArticle(url);
+        resetMessages();
+        state.source = source;
+
+        el('board').textContent = data.board || '';
+        el('articleTitle').textContent = data.title || 'Fold Chair PTT';
+        document.title = data.title || 'Fold Chair PTT';
+
+        var pushes = data.pushes || [];
+        for (var i = 0; i < pushes.length; i++) {
+            appendMessage(pushes[i], false);
+            if (typeof pushes[i].seq === 'number') {
+                state.lastSeq = Math.max(state.lastSeq, pushes[i].seq);
+            }
+        }
+
+        el('loader').hidden = true;
+        el('boardView').hidden = true;
+        el('main').hidden = false;
+        el('changeBtn').hidden = false;
+        el('changeBtn').textContent = source === 'board' ? '返回列表' : '更換文章';
+        state.loaded = true;
+        scrollToBottom(false);
+        updateBottomBtn();
+
+        await api().StartMonitor();
+        setStatus('polling', '監控中');
+    }
+
     async function loadArticle() {
         var url = el('urlInput').value.trim();
         if (!url) {
@@ -223,35 +280,9 @@
         el('loadBtn').textContent = '載入中...';
 
         try {
-            var data = await api().LoadArticle(url);
-            resetMessages();
-
-            el('board').textContent = data.board || '';
-            el('articleTitle').textContent = data.title || 'Fold Chair PTT';
-            document.title = data.title || 'Fold Chair PTT';
-
-            var pushes = data.pushes || [];
-            for (var i = 0; i < pushes.length; i++) {
-                appendMessage(pushes[i], false);
-                if (typeof pushes[i].seq === 'number') {
-                    state.lastSeq = Math.max(state.lastSeq, pushes[i].seq);
-                }
-            }
-
-            el('loader').hidden = true;
-            el('main').hidden = false;
-            el('changeBtn').hidden = false;
-            state.loaded = true;
-            scrollToBottom(false);
-            updateBottomBtn();
-
-            await api().StartMonitor();
-            setStatus('polling', '監控中');
+            await openArticle(url, 'url');
         } catch (e) {
-            var message = e && e.message ? e.message : String(e);
-            el('error').textContent = message;
-            el('main').hidden = true;
-            el('loader').hidden = false;
+            el('error').textContent = errorText(e);
             state.loaded = false;
             setStatus('error', '載入失敗');
         } finally {
@@ -260,16 +291,106 @@
         }
     }
 
-    function backToLoader() {
+    async function openBoard(board) {
+        state.board = board;
+        el('error').textContent = '';
+        try {
+            renderBoard(await api().ListBoard(board, ''));
+            showBoardView();
+        } catch (e) {
+            el('error').textContent = errorText(e);
+            setStatus('error', '載入失敗');
+        }
+    }
+
+    async function loadBoardPage(url) {
+        el('boardError').textContent = '';
+        try {
+            renderBoard(await api().ListBoard(state.board, url || ''));
+        } catch (e) {
+            el('boardError').textContent = errorText(e);
+        }
+    }
+
+    async function openFromBoard(url) {
+        el('boardError').textContent = '';
+        try {
+            await openArticle(url, 'board');
+        } catch (e) {
+            el('boardError').textContent = errorText(e);
+            setStatus('error', '載入失敗');
+        }
+    }
+
+    function scoreInfo(score) {
+        if (score >= 100) return { text: '爆', cls: 'score-hot' };
+        if (score >= 30) return { text: String(score), cls: 'score-high' };
+        if (score > 0) return { text: String(score), cls: 'score-low' };
+        if (score <= -100) return { text: 'XX', cls: 'score-neg' };
+        if (score < 0) return { text: 'X' + Math.floor(-score / 10), cls: 'score-neg' };
+        return { text: '', cls: '' };
+    }
+
+    function renderBoard(page) {
+        state.boardPage = page;
+        el('boardName').textContent = BOARD_NAMES[page.board] || page.board;
+        el('pageInfo').textContent = /index\d+\.html$/.test(page.url) ? '歷史文章' : '最新文章';
+        el('prevPageBtn').disabled = !page.prevUrl;
+        el('nextPageBtn').disabled = !page.nextUrl;
+
+        var ul = el('boardItems');
+        ul.innerHTML = '';
+        ul.scrollTop = 0;
+        page.entries.forEach(function (entry) {
+            var li = document.createElement('li');
+            var btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'board-item';
+
+            var info = scoreInfo(entry.score);
+            var score = document.createElement('span');
+            score.className = 'board-item-score ' + info.cls;
+            score.textContent = info.text;
+
+            var body = document.createElement('span');
+            body.className = 'board-item-body';
+
+            var title = document.createElement('span');
+            title.className = 'board-item-title';
+            title.textContent = entry.title;
+
+            var author = document.createElement('span');
+            author.className = 'board-item-author';
+            author.textContent = entry.author;
+
+            body.appendChild(title);
+            body.appendChild(author);
+
+            var date = document.createElement('span');
+            date.className = 'board-item-date';
+            date.textContent = entry.date;
+
+            btn.appendChild(score);
+            btn.appendChild(body);
+            btn.appendChild(date);
+            btn.addEventListener('click', function () {
+                openFromBoard(entry.url);
+            });
+            li.appendChild(btn);
+            ul.appendChild(li);
+        });
+    }
+
+    function backFromMonitor() {
         api().StopMonitor();
         state.loaded = false;
         resetMessages();
-        el('main').hidden = true;
         el('settings').hidden = true;
-        el('loader').hidden = false;
-        el('changeBtn').hidden = true;
-        el('board').textContent = '';
-        el('articleTitle').textContent = 'Fold Chair PTT';
+        if (state.source === 'board' && state.boardPage) {
+            showBoardView();
+        } else {
+            showLoader();
+        }
         updateBottomBtn();
         setStatus('', '待機');
     }
@@ -323,7 +444,22 @@
         el('closeBtn').addEventListener('click', function () {
             window.runtime.Quit();
         });
-        el('changeBtn').addEventListener('click', backToLoader);
+        el('changeBtn').addEventListener('click', backFromMonitor);
+        document.querySelectorAll('.board-btn').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                openBoard(btn.getAttribute('data-board'));
+            });
+        });
+        el('boardBackBtn').addEventListener('click', showLoader);
+        el('boardRefreshBtn').addEventListener('click', function () {
+            loadBoardPage(state.boardPage ? state.boardPage.url : '');
+        });
+        el('prevPageBtn').addEventListener('click', function () {
+            loadBoardPage(state.boardPage.prevUrl);
+        });
+        el('nextPageBtn').addEventListener('click', function () {
+            loadBoardPage(state.boardPage.nextUrl);
+        });
         el('toBottom').addEventListener('click', function () {
             flushBuffer();
             scrollToBottom(true);

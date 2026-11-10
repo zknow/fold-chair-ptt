@@ -83,6 +83,18 @@ func (a *App) LoadArticle(rawURL string) (*ptt.Article, error) {
 	return art, nil
 }
 
+func (a *App) ListBoard(board, pageURL string) (*ptt.BoardPage, error) {
+	indexURL, err := ptt.BoardIndexURL(board, pageURL)
+	if err != nil {
+		return nil, err
+	}
+	html, err := a.client.Get(indexURL)
+	if err != nil {
+		return nil, err
+	}
+	return ptt.ParseBoardIndex(indexURL, html)
+}
+
 func (a *App) StartMonitor() error {
 	a.mu.Lock()
 	art := a.article

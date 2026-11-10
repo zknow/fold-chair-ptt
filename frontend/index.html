@@ -23,11 +23,31 @@
         <section id="loader" class="loader">
             <div class="loader-card">
                 <h1>Fold Chair PTT</h1>
-                <p class="hint">貼上 PTT 文章網址，開始即時追蹤推文。</p>
+                <p class="hint">選擇看板瀏覽文章，或貼上文章網址，開始即時追蹤推文。</p>
+                <div class="boards">
+                    <button class="board-btn" data-board="Stock"><span class="board-btn-name">Stock</span><span class="board-btn-sub">股票板</span></button>
+                    <button class="board-btn" data-board="Gossiping"><span class="board-btn-name">八卦</span><span class="board-btn-sub">Gossiping</span></button>
+                </div>
+                <div class="divider"><span>或</span></div>
                 <input id="urlInput" type="text" spellcheck="false" autocomplete="off"
                     placeholder="https://www.ptt.cc/bbs/Stock/M.xxxx.A.xxx.html" />
                 <button id="loadBtn" class="primary-btn">開始監控</button>
                 <p id="error" class="error"></p>
+            </div>
+        </section>
+
+        <section id="boardView" class="board-view" hidden>
+            <div class="board-head">
+                <button id="boardBackBtn" class="nav-btn">← 返回</button>
+                <span id="boardName" class="board-head-name"></span>
+                <button id="boardRefreshBtn" class="nav-btn">重新整理</button>
+            </div>
+            <p id="boardError" class="error"></p>
+            <ul id="boardItems" class="board-items"></ul>
+            <div class="pager">
+                <button id="prevPageBtn" class="pager-btn">上一頁</button>
+                <span id="pageInfo"></span>
+                <button id="nextPageBtn" class="pager-btn">下一頁</button>
             </div>
         </section>
 
