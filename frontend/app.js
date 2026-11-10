@@ -121,13 +121,15 @@
         return 'neutral';
     }
 
-    function renderMessage(p) {
+    function renderMessage(p, animate) {
         var li = document.createElement('li');
-        li.className = 'msg ' + tagClass(p.tag);
+        li.className = 'msg ' + tagClass(p.tag) + (animate ? ' enter' : '');
 
-        var tag = document.createElement('span');
-        tag.className = 'tag';
-        tag.textContent = p.tag || '';
+        var meta = document.createElement('div');
+        meta.className = 'meta';
+
+        var dot = document.createElement('span');
+        dot.className = 'dot';
 
         var user = document.createElement('span');
         user.className = 'user';
@@ -152,10 +154,11 @@
         time.className = 'time';
         time.textContent = ((p.date || '') + ' ' + (p.time || '')).trim();
 
-        li.appendChild(tag);
-        li.appendChild(user);
+        meta.appendChild(dot);
+        meta.appendChild(user);
+        meta.appendChild(time);
+        li.appendChild(meta);
         li.appendChild(content);
-        li.appendChild(time);
         return li;
     }
 
@@ -169,9 +172,9 @@
         }
     }
 
-    function appendMessage(p, autoScroll) {
+    function appendMessage(p, autoScroll, animate) {
         state.messages.push(p);
-        el('messages').appendChild(renderMessage(p));
+        el('messages').appendChild(renderMessage(p, animate));
         trimMessages();
         if (autoScroll) {
             scrollToBottom(false);
@@ -291,7 +294,7 @@
 
             if (nearBottom()) {
                 for (var j = 0; j < fresh.length; j++) {
-                    appendMessage(fresh[j], false);
+                    appendMessage(fresh[j], false, true);
                 }
                 scrollToBottom(false);
             } else {

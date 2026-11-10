@@ -5,12 +5,16 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"net/url"
 	"strings"
 	"time"
 )
 
 const baseURL = "https://www.ptt.cc"
+
+// longPollWait 是單次長輪詢的最長等待時間，超時視為無新留言。
+const longPollWait = 10 * time.Second
 
 // errLongPollExpired：PTT 長輪詢到期（約 100 秒無新推文）後 id 立即失效，必須重抓文章換新 id。
 var errLongPollExpired = errors.New("長輪詢已失效")
@@ -43,6 +47,10 @@ func (m *Monitor) Run(ctx context.Context) {
 		}
 		pushes, err := m.pollOnce(ctx)
 		if err != nil {
+			if ctx.Err() != nil {
+				return
+			}
+			log.Printf("[ptt] poll error: %v", err)
 			if errors.Is(err, errLongPollExpired) {
 				m.rebuild(ctx)
 				if !sleep(ctx, m.interval) {
@@ -81,11 +89,14 @@ func (m *Monitor) pollOnce(ctx context.Context) ([]Push, error) {
 		return nil, fmt.Errorf("文章缺少輪詢網址")
 	}
 
-	longBody, err := m.client.GetCtx(ctx, baseURL+m.article.LongPollURL, 120*time.Second)
+	longBody, err := m.client.GetCtx(ctx, baseURL+m.article.LongPollURL, longPollWait)
 	if err != nil {
 		var se *statusError
 		if errors.As(err, &se) {
 			return nil, errLongPollExpired
+		}
+		if ctx.Err() == nil && errors.Is(err, context.DeadlineExceeded) {
+			return nil, nil
 		}
 		return nil, err
 	}
@@ -120,12 +131,15 @@ func (m *Monitor) pollOnce(ctx context.Context) ([]Push, error) {
 
 // rebuild 在連續失敗後重新抓取文章，補回中斷期間的新推文
 func (m *Monitor) rebuild(ctx context.Context) {
+	log.Printf("[ptt] rebuild article")
 	html, err := m.client.GetCtx(ctx, m.article.URL, 20*time.Second)
 	if err != nil {
+		log.Printf("[ptt] rebuild fetch error: %v", err)
 		return
 	}
 	art, err := ParseArticle(m.article.URL, html)
 	if err != nil {
+		log.Printf("[ptt] rebuild parse error: %v", err)
 		return
 	}
 	m.article.PollURL = art.PollURL

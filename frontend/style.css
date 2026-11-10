@@ -156,7 +156,10 @@ body {
     min-height: 0;
     list-style: none;
     margin: 0;
-    padding: 6px 10px 40px;
+    padding: 8px 10px 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
     overflow-y: auto;
     overflow-x: hidden;
     scrollbar-width: thin;
@@ -169,29 +172,57 @@ body.theme-dark .messages {
 }
 
 .msg {
-    display: grid;
-    grid-template-columns: auto auto 1fr auto;
-    gap: 6px;
-    align-items: baseline;
-    padding: 3px 0;
-    border-bottom: 1px solid transparent;
+    flex: none;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 9px 12px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
 }
 
-.msg .tag {
-    font-weight: 700;
-    font-size: 0.9em;
+.msg.enter {
+    animation: msg-slide-in 0.32s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+@keyframes msg-slide-in {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+.msg .meta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.8em;
+    color: var(--text-muted);
+}
+
+.msg .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--neutral);
+    flex: none;
 }
 
 .msg .user {
     font-weight: 600;
     color: var(--text);
-    font-size: 0.92em;
+    font-size: 0.95em;
+}
+
+.msg .time {
+    margin-left: auto;
+    white-space: nowrap;
 }
 
 .msg .content {
+    display: block;
+    margin-top: 5px;
     color: var(--text);
     word-break: break-word;
     white-space: pre-wrap;
+    line-height: 1.55;
 }
 
 .msg .content a {
@@ -199,15 +230,9 @@ body.theme-dark .messages {
     text-decoration: underline;
 }
 
-.msg .time {
-    color: var(--text-muted);
-    font-size: 0.78em;
-    white-space: nowrap;
-}
-
-.msg.up .tag { color: var(--up); }
-.msg.down .tag { color: var(--down); }
-.msg.neutral .tag { color: var(--neutral); }
+.msg.up .dot { background: var(--up); box-shadow: 0 0 6px var(--up); }
+.msg.down .dot { background: var(--down); box-shadow: 0 0 6px var(--down); }
+.msg.neutral .dot { background: var(--neutral); }
 
 .to-bottom {
     position: absolute;
